@@ -25,9 +25,9 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
-    "@getpaseo/client": "0.10.2",
-    "@getpaseo/plugin": "0.10.2",
-    "@getpaseo/protocol": "0.10.2",
+    "@getpaseo/client": "0.10.1",
+    "@getpaseo/plugin": "0.10.1",
+    "@getpaseo/protocol": "0.10.1",
     "@types/node": "^24.0.0",
     "@tanstack/react-query": "^5.90.0",
     "@types/react": "~19.1.0",

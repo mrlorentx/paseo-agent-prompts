@@ -2,6 +2,6 @@
   "id": "agent-system-prompt",
   "description": "Manage role instructions and profile links in Settings, with Markdown editing and portable backups.",
   "requirements": {
-    "paseo": ">=0.10.2"
+    "paseo": ">=0.10.1"
   }
 }

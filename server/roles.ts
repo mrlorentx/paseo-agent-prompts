@@ -132,7 +132,7 @@ export function planLink(config: Config, role: Role): MutableDaemonConfigPatch {
   const current = profiles.find((profile) => profile.id === role.profile.id);
   if (role.removed) {
     // Keep user edits and missing profiles. Never delete aliases: archived sessions
-    // and schedules are not completely enumerable through the 0.10.2 plugin API.
+    // and schedules are not completely enumerable through the 0.10.1 plugin API.
     if (current?.provider === role.alias.id && current.provider !== role.profile.restoreProvider) {
       patch.agentProfiles = profiles.map((profile) => profile.id === current.id
         ? { ...profile, provider: role.profile.restoreProvider } : profile);

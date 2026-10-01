@@ -4,7 +4,7 @@ Manage standing instructions for Paseo agents through **Settings → Plugins →
 
 Create a role, choose an existing agent profile or create a new one, write Markdown instructions, and select **Save role**. The plugin creates or adopts a provider alias and links the profile automatically. Use that profile in Paseo's normal agent picker or delegated-agent workflow. Ordinary setup requires no JSON editing, symlinks, or shell commands.
 
-Requires Paseo **0.10.2 or newer on both the daemon and app**. Development and offline verification target 0.10.2; later releases have not been tested.
+Requires Paseo **0.10.1 or newer on both the daemon and app**. Development SDKs target 0.10.1. Offline checks cover 0.10.1 and 0.10.2; later releases have not been tested.
 
 ## Install and configure
 
@@ -37,13 +37,13 @@ Paseo configuration owns providers and agent profiles. All writes use `paseo.con
 
 - **Existing profile:** only its provider is changed. Model, mode, thinking, feature settings, notes, icon, color, and unknown profile fields are preserved. Linking is recorded as adoption.
 - **New profile:** gets its own stable ID and is recorded as plugin-created.
-- **Automatic alias:** gets a stable ID derived from the role ID. Custom source-provider options are copied because 0.10.2 aliases extend a built-in provider or ACP, rather than another alias. Credentials and options stay in daemon configuration; they are not copied into plugin settings or exports. Changes to the source provider after creation do not update this independent copy.
+- **Automatic alias:** gets a stable ID derived from the role ID. Custom source-provider options are copied because Paseo 0.10.1 and 0.10.2 aliases extend a built-in provider or ACP, rather than another alias. Credentials and options stay in daemon configuration; they are not copied into plugin settings or exports. Changes to the source provider after creation do not update this independent copy.
 - **Adopted alias:** choose one explicitly under **Advanced details**. It must be a custom alias with the same base provider. Its configuration is never patched. Adoption applies the role to every future agent using that alias, including other profiles and schedules.
 - **Disable:** retains instructions and profile/alias links, but stops adding role instructions to new agents.
 - **Remove:** stops instructions immediately and restores the linked profile's original provider if it still uses the role alias. Other profile edits and deleted profiles are respected. Profiles created by the plugin are kept too. A profile that already used an adopted alias keeps that original alias.
 - **Removed roles:** stay in **Show removed roles** for export or restoration. Their alias IDs remain reserved. Restoring is an explicit draft and save.
 
-**Aliases are always retained**, including after removal. They may be referenced by active or archived agents, other profiles, schedules, or callers outside the plugin. The 0.10.2 plugin SDK does not expose a complete reference inventory, so automatic deletion cannot establish that resume is safe. The plugin never calls `removeProviders`, deletes profiles, or changes schedules. Retained aliases no longer receive instructions from a removed role.
+**Aliases are always retained**, including after removal. They may be referenced by active or archived agents, other profiles, schedules, or callers outside the plugin. The 0.10.1 and 0.10.2 plugin SDKs do not expose a complete reference inventory, so automatic deletion cannot establish that resume is safe. The plugin never calls `removeProviders`, deletes profiles, or changes schedules. Retained aliases no longer receive instructions from a removed role.
 
 ## Save failures and concurrent changes
 
@@ -60,7 +60,7 @@ The service serializes its configuration writes, reads the profile array again i
 
 If an automatically created alias collides or its options changed, nothing is overwritten. Review the provider in Paseo, then **Edit role → Advanced details → Adopt current provider options** to explicitly adopt it. A different base provider cannot be accepted as the same alias.
 
-Paseo 0.10.2 has **no compare-and-swap revision on daemon config patches**. The remaining race between the last read and patch cannot be eliminated by a plugin: simultaneous external edits to the same whole-array profile configuration can still be lost. Avoid editing profiles in another client during a role-link save. Settings revisions do protect role text from concurrent UI saves.
+Paseo 0.10.1 and 0.10.2 have **no compare-and-swap revision on daemon config patches**. The remaining race between the last read and patch cannot be eliminated by a plugin: simultaneous external edits to the same whole-array profile configuration can still be lost. Avoid editing profiles in another client during a role-link save. Settings revisions do protect role text from concurrent UI saves.
 
 ## Import the prototype or another user's roles
 
