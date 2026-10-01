@@ -1,6 +1,8 @@
-import type { AgentSessionConfig } from "@getpaseo/protocol/agent-types";
+import type { PluginBeforeRequests } from "@getpaseo/plugin/server";
 import type { RoleStore } from "../shared/roles.ts";
 import { readBindings, readRolePrompt } from "./configuration.ts";
+
+type AgentSessionConfig = PluginBeforeRequests["agent.create"]["config"];
 
 export async function applyRolePrompt(
   config: AgentSessionConfig,

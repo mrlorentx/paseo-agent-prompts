@@ -1,9 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 import { homedir } from "node:os";
-import type { PaseoApi } from "@getpaseo/client";
-import type { MutableDaemonConfig, MutableDaemonConfigPatch } from "@getpaseo/protocol/messages";
-import type { PluginSettingsState } from "@getpaseo/plugin/server";
+import type { PluginHandlerContext, PluginSettingsState } from "@getpaseo/plugin/server";
 import { draftSchema, roleSchema, storeSchema, type Role, type RoleDraft, type Profile } from "../shared/roles.ts";
+
+type PaseoApi = PluginHandlerContext["paseo"];
+type MutableDaemonConfig = Awaited<ReturnType<PaseoApi["config"]["get"]>>["config"];
+type MutableDaemonConfigPatch = Parameters<PaseoApi["config"]["patch"]>[0];
 
 export type StoreState = PluginSettingsState<typeof storeSchema>;
 type Config = Pick<MutableDaemonConfig, "providers" | "agentProfiles">;

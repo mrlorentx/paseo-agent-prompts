@@ -101,7 +101,9 @@ npm run smoke
 npm pack --dry-run
 ```
 
-The smoke command requires an installed Paseo CLI. It locates its compiler without connecting to a daemon; `PASEO_COMPILER` can override the compiler module path for other installations. It compiles both actual entries, renders the client with a simulated React Native host, and exercises save/cancel, existing and new profiles, prompt injection through copied profile settings, conflicts, failed writes/retry, removal, export/import preview, compact layout, and themed controls.
+The smoke command requires an installed Paseo CLI. It locates its compiler without connecting to a daemon; `PASEO_COMPILER` can override the compiler module path for other installations. It first copies the source into a temporary checkout without `node_modules` and compiles both entries there, matching GitHub installation. It then renders those bundles with a simulated React Native host and exercises save/cancel, existing and new profiles, prompt injection through copied profile settings, conflicts, failed writes/retry, removal, export/import preview, compact layout, and themed controls.
+
+The plugin needs only Paseo's host-provided runtime modules, so Git installations require no dependency installation or preparation command. Type imports are checked too: production source derives daemon and agent configuration types through `@getpaseo/plugin/server`, rather than directly importing the development-only `@getpaseo/client` or `@getpaseo/protocol` packages.
 
 This verifies bundled integration without installing or enabling plugins. It does **not** substitute for checking a real desktop/mobile client or live Codex/Claude creation and resume. Those live checks remain outstanding. No daemon enablement, installation, publication, or live-agent launch is performed by the development checks.
 

@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { realpathSync } from "node:fs";
+import { cp, mkdtemp, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { dirname, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
@@ -15,7 +17,23 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const cli = realpathSync(execFileSync("which", ["paseo"], { encoding: "utf8" }).trim());
 const compilerPath = process.env.PASEO_COMPILER ?? resolve(dirname(cli), "../node_modules/@getpaseo/server/dist/server/server/plugins/compiler.js");
 const { compilePlugin } = await import(pathToFileURL(compilerPath).href);
-const bundles = await compilePlugin({ client: resolve(root, "index.client.tsx"), server: resolve(root, "index.server.ts") });
+const checkout = await mkdtemp(join(tmpdir(), "paseo-plugin-install-smoke-"));
+let bundles;
+try {
+  await cp(root, checkout, {
+    recursive: true,
+    filter: (path) => ![".git", "node_modules"].includes(basename(path)),
+  });
+  // The installed source must compile using only host-provided modules.
+  const checkoutRequire = createRequire(resolve(checkout, "package.json"));
+  assert.throws(() => checkoutRequire.resolve("@getpaseo/protocol/agent-types"), { code: "MODULE_NOT_FOUND" });
+  bundles = await compilePlugin({
+    client: resolve(checkout, "index.client.tsx"),
+    server: resolve(checkout, "index.server.ts"),
+  });
+} finally {
+  await rm(checkout, { recursive: true, force: true });
+}
 assert.ok(bundles.clientBundle && bundles.serverBundle);
 const evaluate = (source, loader = require) => new Function("return " + source)()(loader);
 
@@ -223,4 +241,4 @@ for (const node of tree.root.findAllByType("Pressable")) assert.ok(node.props.st
 assert.ok(tree.root.findAllByType("View").some((node) => node.props.style?.flexDirection === "column"));
 await act(async () => tree.unmount());
 queryClient.clear();
-console.log("Compiled both Paseo bundles; settings UI, native layouts, profile/delegation hooks, conflict, retry, removal and backup smoke checks passed.");
+console.log("Compiled a clean checkout without node_modules; settings UI, native layouts, profile/delegation hooks, conflict, retry, removal and backup smoke checks passed.");
