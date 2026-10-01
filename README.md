@@ -1,110 +1,115 @@
 # Role instructions for Paseo
 
-Manage standing instructions for Paseo agents through **Settings → Plugins → agent-system-prompt → Role instructions**.
+Give your [Paseo](https://paseo.sh) agent profiles reusable Markdown instructions. Create roles such as **Code reviewer**, **Backend developer**, or **Design critic**, then use them through Paseo's normal profile picker.
 
-Create a role, choose an existing agent profile or create a new one, write Markdown instructions, and select **Save role**. The plugin creates or adopts a provider alias and links the profile automatically. Use that profile in Paseo's normal agent picker or delegated-agent workflow. Ordinary setup requires no JSON editing, symlinks, or shell commands.
+The plugin provides an instruction editor and links each role to a profile automatically. Installation and everyday setup happen in the UI, without editing JSON or running shell commands.
 
-Requires Paseo **0.10.1 or newer on both the daemon and app**. Development SDKs target 0.10.1. Offline checks cover 0.10.1 and 0.10.2; later releases have not been tested.
+## Install
 
-## Install and configure
+You need **Paseo 0.10.1 or newer in both the app and daemon**, and a working agent provider on the host where you install the plugin.
 
-1. On the intended host, open **Settings → Plugins**. Paseo plugins are trusted code, so only enable plugins and install sources you trust.
-2. Enter the plugin's directory path on that daemon, or a Git/npm source supplied by its distributor, into **Plugin source** and install it.
-3. Open **Role instructions** under the installed plugin.
-4. Select **Create role**. Choose an existing profile or **Create a new profile**. New profiles can select a provider, model, mode, thinking level, and discovered feature settings.
-5. Write the role name and standing instructions; select **Save role**. **Cancel** discards the draft without writing settings or configuration.
-6. Wait for **Ready for new agents**, then create a new agent with the linked profile.
+1. Select that host in Paseo, open **Settings → Plugins**, and turn on **Enable plugins**.
+2. Paste this into **Plugin source** and select **Install plugin**:
 
-This repository is prepared for sharing but has not been published or installed on the local daemon. Its npm package remains private until a release is intentionally prepared. A distributor can share this directory or repository without changing the implementation. npm publication additionally requires removing `private` and choosing package ownership and licensing.
+   ```text
+   github:mrlorentx/paseo-agent-prompts
+   ```
 
-Role names and profile names are separate. Renaming a role preserves its stable ID, provider alias, and profile. Rename the profile through Paseo's profile settings if its picker label should change too.
+3. Find **agent-system-prompt**, ensure it is enabled, and open **Role instructions** from its three-dot settings menu.
 
-## What gets applied
+Paseo plugins run with access to the daemon host and app. Install only sources you trust; see [Paseo's installation guide](https://paseo.sh/docs/plugins#install-and-try-it).
 
-The creation hook matches the **exact provider alias** and appends the saved instructions to any existing `config.systemPrompt`. It preserves every other request/config field. Model, mode, or profile-name combinations never determine role identity.
+## Create your first role
 
-Selecting a profile copies its settings, including the alias. Delegated launches do the same; no selected profile ID needs to reach the hook. Direct launches using that alias also receive the role instructions.
+1. Select **Create role** and enter a name, such as **Code reviewer**.
+2. Choose **Use an existing profile** or **Create a new profile**. Existing profiles keep their model, mode, thinking, and feature settings. For a new profile, choose a provider and any settings you want to override.
+3. Write your instructions in **Standing instructions (Markdown)**. For example:
 
-Codex receives developer instructions; Claude receives appended system instructions. The provider's built-in prompt and Paseo's daemon-wide instructions remain in place. Other providers can be selected, but their handling of `systemPrompt` needs provider-specific verification.
+   ```markdown
+   Review changes for correctness, readability, and missing tests.
+   Prioritize concrete defects and explain their impact.
+   Include file references in your findings.
+   Ask before modifying files during a review.
+   ```
 
-Instructions are captured at **agent creation**. Edits, disable, and removal affect future agents. Existing sessions retain their captured text when resumed. Changing the provider of an existing session does not rerun this hook.
+4. Select **Save role** and wait for **Ready for new agents**. **Cancel** discards an unsaved draft.
+5. Start a new agent with the linked profile in Paseo's normal picker. Delegated agents receive the same instructions when launched with that profile's settings.
 
-## Ownership and lifecycle
+For more examples, open **Import / export → Preview bundled example prompts**. Select **Configure …** to review and adapt a prompt before saving it.
 
-Host-scoped plugin settings are the canonical store for Markdown, stable role IDs, enabled state, removed-role records, and alias/profile ownership. Settings survive daemon restart, reload, disable, and updates under the **same installation ID**. They are separate from source files.
+## Use and manage roles
 
-Paseo configuration owns providers and agent profiles. All writes use `paseo.config.get()` and `paseo.config.patch()`; the plugin never rewrites `config.json`.
+The settings screen lists each role with its profile, provider, and link status. Roles are shared by clients connected to the same host; other hosts have separate roles.
 
-- **Existing profile:** only its provider is changed. Model, mode, thinking, feature settings, notes, icon, color, and unknown profile fields are preserved. Linking is recorded as adoption.
-- **New profile:** gets its own stable ID and is recorded as plugin-created.
-- **Automatic alias:** gets a stable ID derived from the role ID. Custom source-provider options are copied because Paseo 0.10.1 and 0.10.2 aliases extend a built-in provider or ACP, rather than another alias. Credentials and options stay in daemon configuration; they are not copied into plugin settings or exports. Changes to the source provider after creation do not update this independent copy.
-- **Adopted alias:** choose one explicitly under **Advanced details**. It must be a custom alias with the same base provider. Its configuration is never patched. Adoption applies the role to every future agent using that alias, including other profiles and schedules.
-- **Disable:** retains instructions and profile/alias links, but stops adding role instructions to new agents.
-- **Remove:** stops instructions immediately and restores the linked profile's original provider if it still uses the role alias. Other profile edits and deleted profiles are respected. Profiles created by the plugin are kept too. A profile that already used an adopted alias keeps that original alias.
-- **Removed roles:** stay in **Show removed roles** for export or restoration. Their alias IDs remain reserved. Restoring is an explicit draft and save.
+**Instructions apply when an agent is created.** Editing, disabling, or removing a role affects future agents. Resuming an existing session keeps the instructions captured at creation.
 
-**Aliases are always retained**, including after removal. They may be referenced by active or archived agents, other profiles, schedules, or callers outside the plugin. The 0.10.1 and 0.10.2 plugin SDKs do not expose a complete reference inventory, so automatic deletion cannot establish that resume is safe. The plugin never calls `removeProviders`, deletes profiles, or changes schedules. Retained aliases no longer receive instructions from a removed role.
+| Action | Effect |
+| --- | --- |
+| **Edit role → Save role** | Saves instructions for future agents. Renaming keeps the same role and profile link. |
+| **Disable / Enable** | Stops or resumes adding instructions to new agents. Keeps the instructions and profile link. |
+| **Remove role → Remove and unlink** | Stops adding instructions and restores the profile's original provider if it still uses the role alias. Keeps the profile and its other settings. |
+| **Show removed roles → Restore role** | Opens a draft to review and save. Removed instructions remain available for export. |
 
-## Save failures and concurrent changes
+Role names and profile names are separate. To change the label in the agent picker, rename the profile in Paseo's profile settings.
 
-Save has two steps:
+The plugin adds to existing instructions. Paseo passes the role text as developer instructions to Codex and appended system instructions to Claude. Other providers depend on their support for `systemPrompt`; see [verification coverage](CONTRIBUTING.md#verification-coverage).
 
-1. Validate and save the desired role in host settings using Paseo's revision guard.
-2. Re-read daemon config, create the alias if needed, merge the profile link, and verify the resulting config.
+## Back up and share roles
 
-This is intentionally recoverable rather than pretending settings and daemon configuration share a transaction. Instructions start applying to an existing alias after step 1. If step 2 fails, the saved role remains visible with an error and **Retry profile linking**. Refresh or reopen settings after a disconnect; status is derived from current configuration, so no in-memory transaction is needed. Retry also handles a response lost after the configuration was committed.
+1. Open **Import / export → Export all roles → Copy backup**.
+2. Save the copied text in a file outside Paseo. If clipboard access fails, select and copy the displayed text manually.
+3. To restore or transfer roles, paste the complete backup into **Paste a role backup** and select **Preview import**.
+4. Select **Configure …** for each role, review its instructions and profile selection, and save.
 
-An unsaved draft keeps its original settings revision. A conflicting save is rejected and the draft stays open. Copy its instructions, cancel, reopen the current role, and merge the intended change.
+Backups include removed roles and saved profile preferences. They exclude provider credentials and configuration, so set up providers separately on a new host. Review the instructions before sharing a backup if they contain private information.
 
-The service serializes its configuration writes, reads the profile array again immediately before patching, preserves unrelated entries, and verifies the result. A provider change on the target profile causes a conflict. **Edit role → Restore profile link** explicitly accepts relinking while keeping that profile's latest other settings.
+Imports preserve the full instruction text. A matching role ID opens an edit of that role; a new host gets new profile links. Review and save each imported role individually.
 
-If an automatically created alias collides or its options changed, nothing is overwritten. Review the provider in Paseo, then **Edit role → Advanced details → Adopt current provider options** to explicitly adopt it. A different base provider cannot be accepted as the same alias.
+### Import older Markdown bindings
 
-Paseo 0.10.1 and 0.10.2 have **no compare-and-swap revision on daemon config patches**. The remaining race between the last read and patch cannot be eliminated by a plugin: simultaneous external edits to the same whole-array profile configuration can still be lost. Avoid editing profiles in another client during a role-link save. Settings revisions do protect role text from concurrent UI saves.
+If you used the earlier file-based version, choose **Read prototype files** in **Import / export**. It reads `$PASEO_HOME/agent-system-prompt/bindings.json`, or `~/.paseo/agent-system-prompt/bindings.json` when `PASEO_HOME` is unset. For another location, enter an absolute path on the **daemon host** in **Legacy bindings path**.
 
-## Import the prototype or another user's roles
+Select **Configure …** for each imported role, check the instructions and profile, and save. Relative prompt paths resolve beside the bindings file. Original files remain untouched; later changes to those files take effect only after another import and save.
 
-Open **Import / export**:
+## Update or uninstall
 
-- **Read prototype files** reads `$PASEO_HOME/agent-system-prompt/bindings.json`, falling back to `~/.paseo/agent-system-prompt/bindings.json`. An optional absolute path on the daemon host supports a different location. Relative Markdown paths resolve beside that bindings file.
-- **Preview bundled example prompts** imports lossless copies of this repository's Backend worker and Design Critic drafts, without relying on bundle-relative paths.
-- **Preview import** accepts a pasted export and lists roles for review.
+Export a backup before updating or uninstalling. Saved roles survive restarts, disabling the plugin, and updates to the same installation. **Uninstalling deletes the plugin's saved roles.** See [Paseo's settings lifecycle](https://paseo.sh/docs/plugins/reference#persisted-values).
 
-Choose **Configure …** for each role, review its complete Markdown, select a profile, and save. An existing profile using the exact legacy alias can be selected automatically. Otherwise choose the intended profile yourself; roles are never guessed from models or modes. For example, if Design Critic still uses base Claude, choose that profile and explicitly adopt its legacy alias in Advanced details.
-
-Imports preserve the exact instruction text, including whitespace. They never modify or delete Markdown/bindings files. Imported portable roles keep their stable role IDs. On another host they receive new profile/alias mappings; matching role IDs on the same installation open an edit draft rather than making a duplicate. Restore removed roles only when intended.
-
-The old file reader, standalone validator, original example Markdown, and nine prototype tests remain available for validation and migration. The installed hook now uses settings; editing legacy files has no effect until you import and save them again.
-
-## Backups, updates, and uninstall
-
-Use **Export all roles → Copy backup** and save the text outside Paseo. A selectable text area is available if clipboard access fails. Paste it into **Preview import** to restore through the UI. Backups include removed roles and profile preferences, and exclude provider credentials and ownership claims. Treat exported instructions as private when they contain private information.
-
-Keep the plugin installation ID `agent-system-prompt` unchanged across updates. Do not remove and reinstall as an update procedure.
-
-**Removing the plugin installation deletes its host settings**, including instructions. Export first. Uninstall does not run profile cleanup: aliases and profiles remain in daemon config so existing sessions can still resume. They launch future agents without this plugin's added instructions. Remove/unlink individual roles through the UI before uninstalling if you want profiles restored to their previous providers.
-
-Settings validation failures are surfaced without resetting the stored document. Invalid settings stop prompt injection and emit a metadata-only error; they do not block every unrelated agent creation. A host read/transport failure still fails the hook. Missing or malformed legacy files affect only explicit import/validation, not ordinary agent creation.
-
-The UI does not silently reset an invalid or unsupported-version settings document. Preserve that host document and recover it using a compatible plugin version or a host backup. Portable exports are intended for recovery into a healthy installation.
-
-## Development and verification
-
-Use Node 22.18 or newer. SDK/React Native versions are pinned to the inspected Paseo release. From this checkout:
+To update a GitHub installation, use Paseo's CLI and review the proposed revision:
 
 ```bash
-npm ci --ignore-scripts
-npm run typecheck
-npm test
-npm run check-config -- configuration/bindings.json
-npm run smoke
-npm pack --dry-run
+paseo plugin update agent-system-prompt
 ```
 
-The smoke command requires an installed Paseo CLI. It locates its compiler without connecting to a daemon; `PASEO_COMPILER` can override the compiler module path for other installations. It first copies the source into a temporary checkout without `node_modules` and compiles both entries there, matching GitHub installation. It then renders those bundles with a simulated React Native host and exercises save/cancel, existing and new profiles, prompt injection through copied profile settings, conflicts, failed writes/retry, removal, export/import preview, compact layout, and themed controls.
+This targets the CLI's default host; use Paseo's global `--host` option for another host. Paseo currently documents update review through the [CLI](https://paseo.sh/docs/plugins/reference#cli-reference). Keep the existing installation instead of uninstalling and reinstalling to update.
 
-The plugin needs only Paseo's host-provided runtime modules, so Git installations require no dependency installation or preparation command. Type imports are checked too: production source derives daemon and agent configuration types through `@getpaseo/plugin/server`, rather than directly importing the development-only `@getpaseo/client` or `@getpaseo/protocol` packages.
+Uninstalling leaves profiles and aliases in Paseo. To restore profiles to their previous providers, remove their roles in the plugin first and resolve any unfinished linking. Aliases are retained because existing agents and schedules may still reference them. Future agents no longer receive this plugin's instructions once it is disabled or uninstalled.
 
-This verifies bundled integration without installing or enabling plugins. It does **not** substitute for checking a real desktop/mobile client or live Codex/Claude creation and resume. Those live checks remain outstanding. No daemon enablement, installation, publication, or live-agent launch is performed by the development checks.
+## Troubleshooting
 
-Current official references: [plugin settings and hooks](https://paseo.sh/docs/plugins/reference), [SDK](https://paseo.sh/docs/sdk/reference), [provider configuration](https://paseo.sh/docs/custom-providers), and [publishing](https://paseo.sh/docs/plugins/publishing).
+| Problem | What to do |
+| --- | --- |
+| **Role instructions** is missing | Check the selected host, both the global **Enable plugins** switch and the plugin's switch, and the app/daemon versions. Open the plugin's logs from its menu for load errors. |
+| A provider is unavailable | Complete that provider's setup in Paseo, then select **Refresh** in the role settings. |
+| Instructions are saved, but linking failed | Read the error, fix the reported problem, then select **Retry profile linking**. Saved text is retained. After a disconnect, refresh or reopen settings to check the result. |
+| A save conflicts with another window | Copy the draft instructions, cancel, reopen the latest role, and merge your changes. The newer saved version has not been overwritten. |
+| The profile's provider changed elsewhere | Use **Edit role → Restore profile link**, then save if you want to link it back to the role. Other profile settings are preserved. |
+| An alias collides or its options changed | Review it in Paseo's provider settings. If it is the intended alias with the same base provider, use **Edit role → Advanced details → Adopt current provider options**, then save. |
+| An agent does not receive the instructions | Check that the role is enabled and ready, then create a **new** agent with its linked profile. Selecting the base provider alone does not select a role. |
+| Settings are invalid | The stored data is preserved, but role instructions are not applied. Recover with a compatible plugin version or a host-settings backup. A portable role backup can be imported into a healthy installation. |
+
+Saving instructions and linking the profile are separate operations. Instructions can already apply to an existing alias even while its profile link needs repair. Avoid editing profiles from another client during a save: Paseo replaces the whole profile list, and simultaneous external edits can overwrite one another.
+
+## Advanced: provider aliases
+
+A provider alias identifies the role when Paseo creates an agent. The plugin matches that alias exactly; it never guesses from a model, mode, or profile name. You can inspect IDs and ownership under **Advanced details**.
+
+Automatic aliases copy the selected provider's configured options when created. Later changes to that source provider do not synchronize to the copy.
+
+To reuse an existing custom alias, select it under **Advanced details → Provider alias** while creating the role. It must use the same base provider. Adoption preserves its credentials and options, and applies the role to **every new agent using that alias**, including other profiles and schedules.
+
+## Help and contributions
+
+[Report an issue](https://github.com/mrlorentx/paseo-agent-prompts/issues) with your Paseo app and daemon versions, plugin revision, reproduction steps, and error message. Remove credentials and private prompt text from reports.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, tests, compatibility coverage, and the implementation's data-preservation rules.
