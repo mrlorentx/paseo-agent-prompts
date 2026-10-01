@@ -1,0 +1,4 @@
+{
+  "backend-worker": "prompts/backend-worker.md",
+  "design-critic": "prompts/design-critic.md"
+}
